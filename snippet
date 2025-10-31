@@ -1,0 +1,41 @@
+<?php
+// Recursively strip tags from all strings in the schema array
+function ey_strip_tags_deep($value) {
+    if (is_array($value)) {
+        foreach ($value as $k => $v) {
+            $value[$k] = ey_strip_tags_deep($v);
+        }
+        return $value;
+    }
+    if (is_string($value)) {
+        // decode entities then strip tags; trim whitespace
+        return trim( wp_strip_all_tags( html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
+    }
+    return $value;
+}
+
+function ey_seopress_strip_schema_html($json) {
+    return ey_strip_tags_deep($json);
+}
+
+// Attach the same sanitizer to common SEOPress schema hooks.
+// Add more as needed for your site.
+$hooks = [
+    // Automatic schemas (JSON arrays)
+    'seopress_schemas_auto_service_json',
+    'seopress_schemas_auto_product_json',
+    'seopress_schemas_auto_article_json',
+    'seopress_schemas_auto_recipe_json',
+    'seopress_schemas_auto_softwareapp_json',
+
+    // Manual (Pro) schemas (JSON arrays)
+    'seopress_pro_get_json_data_service',
+    'seopress_pro_get_json_data_product',
+    'seopress_pro_get_json_data_article',
+    'seopress_pro_get_json_data_faq',
+    'seopress_get_json_data_organization', // org/business node
+];
+
+foreach ($hooks as $hook) {
+    add_filter($hook, 'ey_seopress_strip_schema_html', 10, 1);
+}
